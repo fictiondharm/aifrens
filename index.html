@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Aura is a friendly scoreboard for everyday yes-or-no predictions among friends.">
-  <title>Aura — friendly prediction scoreboard</title>
+  <meta name="description" content="Make predictions with friends, earn aura points, and unlock status badges. Aura is coming to Solana.">
+  <title>Aura — Predict with friends. Earn aura.</title>
   <style>
     :root {
       color-scheme: light;
@@ -709,30 +709,858 @@
         animation-iteration-count: 1 !important;
       }
     }
+
+    :root {
+      --canvas: #f4f7ff;
+      --surface: #ffffff;
+      --surface-strong: #ffffff;
+      --ink: #12203f;
+      --muted: #5b6680;
+      --line: #dce3f1;
+      --line-strong: #c5cee0;
+      --violet: #3159f5;
+      --violet-dark: #2445c7;
+      --violet-soft: #e9edff;
+      --yes: #087a57;
+      --yes-bright: #13b981;
+      --yes-ink: #052e24;
+      --yes-soft: #def8ee;
+      --no: #c94d1b;
+      --no-bright: #f36b35;
+      --no-ink: #3b1004;
+      --no-soft: #fff0e8;
+      --lemon: #ffd84d;
+      --danger: #bd2f3d;
+      --shadow: 0 18px 46px rgba(30, 49, 99, 0.09);
+      --radius: 24px;
+      --radius-small: 14px;
+    }
+
+    html,
+    body {
+      background: var(--canvas);
+    }
+
+    body {
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 5px #1b2d63;
+    }
+
+    .page-width {
+      width: min(calc(100% - 48px), 1200px);
+    }
+
+    .site-header {
+      background: #f7f9ff;
+      border-bottom-color: var(--line);
+    }
+
+    .topline {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 76px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand-lockup {
+      display: flex;
+      gap: 11px;
+      align-items: center;
+      font-size: 1.08rem;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      display: flex;
+      gap: 3px;
+      align-items: flex-end;
+      width: 30px;
+      height: 30px;
+      padding: 5px;
+      background: var(--violet);
+      border-radius: 9px;
+    }
+
+    .brand-mark span {
+      display: block;
+      width: 5px;
+      background: #ffffff;
+      border-radius: 2px 2px 0 0;
+      transform: skew(-10deg);
+    }
+
+    .brand-mark span:nth-child(1) {
+      height: 9px;
+    }
+
+    .brand-mark span:nth-child(2) {
+      height: 15px;
+    }
+
+    .brand-mark span:nth-child(3) {
+      height: 20px;
+      background: var(--lemon);
+    }
+
+    .beta-status {
+      padding: 7px 11px;
+      color: var(--violet-dark);
+      background: var(--violet-soft);
+      border: 1px solid #ccd6ff;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .hero {
+      grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
+      gap: 64px;
+      align-items: center;
+      padding-block: 72px 66px;
+    }
+
+    .hero-copy {
+      min-width: 0;
+      animation: hero-enter 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .hero-copy h1 {
+      max-width: 760px;
+      font-size: 5.25rem;
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-copy > p {
+      max-width: 650px;
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: 1.18rem;
+      line-height: 1.65;
+    }
+
+    .hero-meta {
+      gap: 0;
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .hero-meta span {
+      padding-inline: 14px;
+      border-left: 1px solid var(--line-strong);
+    }
+
+    .hero-meta span:first-child {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .hero-meta strong {
+      color: var(--ink);
+    }
+
+    .launch-card {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      padding: 28px;
+      color: #ffffff;
+      background: var(--violet);
+      border: 1px solid var(--violet-dark);
+      border-radius: 30px;
+      box-shadow: 0 28px 68px rgba(49, 75, 188, 0.28);
+      animation: hero-enter 560ms 90ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .launch-card::after {
+      position: absolute;
+      top: -74px;
+      right: -68px;
+      z-index: -1;
+      width: 190px;
+      height: 190px;
+      border: 38px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .launch-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 10px;
+      color: var(--violet-dark);
+      background: #ffffff;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 850;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .launch-card h2 {
+      max-width: 420px;
+      margin: 18px 0 0;
+      font-size: 3.25rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .launch-card > p {
+      max-width: 420px;
+      margin: 15px 0 0;
+      color: #ffffff;
+      font-size: 0.98rem;
+      line-height: 1.55;
+    }
+
+    .launch-card .identity-form {
+      grid-template-columns: minmax(0, 1fr) auto;
+      margin-top: 24px;
+    }
+
+    .launch-card .identity-form label {
+      color: #ffffff;
+    }
+
+    .launch-card .identity-form input {
+      min-height: 50px;
+      color: var(--ink);
+      background: #ffffff;
+      border-color: transparent;
+    }
+
+    .launch-card .identity-form input::placeholder {
+      color: #6c7690;
+    }
+
+    .launch-card .secondary-button {
+      min-height: 50px;
+      color: var(--violet-dark);
+      background: #ffffff;
+      border-color: #ffffff;
+    }
+
+    .launch-card .field-error {
+      color: #ffffff;
+    }
+
+    .launch-card .primary-button {
+      min-height: 52px;
+      margin-top: 12px;
+      color: var(--ink);
+      background: var(--lemon);
+      border-color: var(--lemon);
+    }
+
+    .launch-card .primary-button:hover {
+      color: var(--ink);
+      background: #ffe477;
+      border-color: #ffe477;
+    }
+
+    .badge-path {
+      display: grid;
+      grid-template-columns: minmax(240px, 0.8fr) minmax(0, 1.7fr);
+      gap: 42px;
+      align-items: end;
+      padding-block: 30px 40px;
+      border-top: 1px solid var(--line);
+    }
+
+    .badge-path-copy h2 {
+      max-width: 430px;
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+    }
+
+    .badge-path-copy p {
+      max-width: 440px;
+      margin: 12px 0 0;
+      color: var(--muted);
+    }
+
+    .badge-steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .badge-step {
+      min-width: 0;
+      padding: 16px;
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+
+    .badge-step::before {
+      display: block;
+      width: 100%;
+      height: 5px;
+      margin-bottom: 16px;
+      background: #b8c7ec;
+      border-radius: 3px;
+      content: "";
+    }
+
+    .badge-step-chad::before {
+      background: var(--yes-bright);
+    }
+
+    .badge-step-gigachad::before {
+      background: var(--lemon);
+    }
+
+    .tier-name {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 850;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .badge-step strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 1.55rem;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .badge-step small {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+    }
+
+    .content-grid {
+      grid-template-columns: minmax(0, 1fr) 350px;
+      gap: 32px;
+      padding-block: 56px 76px;
+    }
+
+    .section-heading {
+      padding-bottom: 18px;
+      border-bottom-color: var(--line-strong);
+    }
+
+    .section-heading h2 {
+      font-size: 2rem;
+      letter-spacing: -0.035em;
+    }
+
+    .open-count {
+      padding: 6px 10px;
+      color: var(--violet-dark);
+      background: var(--violet-soft);
+      border-radius: 999px;
+    }
+
+    .create-panel {
+      padding: 22px;
+      background: #edf1ff;
+      border-color: #c6d0ff;
+      border-radius: 20px;
+      box-shadow: none;
+    }
+
+    .create-panel textarea {
+      min-height: 112px;
+      padding: 14px;
+      border-radius: 14px;
+    }
+
+    .prediction-list {
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .prediction-card {
+      padding: 24px;
+      background: #ffffff;
+      border-color: var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease;
+    }
+
+    .creator-name {
+      color: #7c2c0b;
+      background: var(--no-soft);
+    }
+
+    .prediction-card h3 {
+      margin: 18px 0 22px;
+      font-size: 1.35rem;
+      line-height: 1.35;
+      letter-spacing: -0.025em;
+    }
+
+    .vote-grid {
+      gap: 12px;
+    }
+
+    .vote-button {
+      min-height: 64px;
+      padding: 12px 16px;
+      border-width: 2px;
+      border-radius: 16px;
+    }
+
+    .vote-button.yes:hover {
+      color: var(--yes-ink);
+      background: var(--yes-bright);
+      border-color: var(--yes-bright);
+    }
+
+    .vote-button.no:hover {
+      color: var(--no-ink);
+      background: var(--no-bright);
+      border-color: var(--no-bright);
+    }
+
+    .vote-button.yes.is-selected {
+      color: var(--yes-ink);
+      background: var(--yes-bright);
+      border-color: var(--yes-bright);
+    }
+
+    .vote-button.no.is-selected {
+      color: var(--no-ink);
+      background: var(--no-bright);
+      border-color: var(--no-bright);
+    }
+
+    .vote-button.is-selected {
+      box-shadow: none;
+      animation: vote-lock 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .resolution-controls {
+      margin-top: 20px;
+      padding: 14px;
+      background: #f1f4ff;
+      border: 1px solid #dce3ff;
+      border-radius: 18px;
+    }
+
+    .resolve-button {
+      min-height: 44px;
+      background: #ffffff;
+      border-color: #cfd8ec;
+    }
+
+    .empty-state {
+      padding: 52px 24px;
+      background: rgba(255, 255, 255, 0.72);
+      border-radius: var(--radius);
+    }
+
+    .leaderboard-panel {
+      padding: 24px;
+      color: #ffffff;
+      background: var(--ink);
+      border-color: var(--ink);
+      border-radius: var(--radius);
+      box-shadow: 0 22px 54px rgba(18, 32, 63, 0.18);
+    }
+
+    .leaderboard-panel h2 {
+      font-size: 1.55rem;
+    }
+
+    .leaderboard-subtitle,
+    .empty-leaderboard,
+    .scoring-note {
+      color: #b9c4dc;
+    }
+
+    .leaderboard-row {
+      border-top-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .rank,
+    .badge {
+      color: #9eabc8;
+    }
+
+    .badge.chad {
+      color: #72e4b9;
+    }
+
+    .badge.gigachad {
+      color: var(--lemon);
+    }
+
+    .score.negative {
+      color: #ff946b;
+    }
+
+    .scoring-note {
+      border-top-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .site-footer {
+      padding-bottom: 32px;
+    }
+
+    .site-footer strong {
+      color: var(--ink);
+    }
+
+    .toast {
+      background: var(--violet-dark);
+      border-color: rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      box-shadow: 0 18px 42px rgba(18, 32, 63, 0.25);
+    }
+
+    .toast.error {
+      background: #8f2431;
+    }
+
+    @keyframes hero-enter {
+      from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes vote-lock {
+      0% {
+        transform: scale(0.98);
+      }
+      65% {
+        transform: scale(1.015);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @media (hover: hover) {
+      .prediction-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 24px 56px rgba(30, 49, 99, 0.13);
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .hero {
+        gap: 40px;
+      }
+
+      .hero-copy h1 {
+        font-size: 4.5rem;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 34px;
+        align-items: start;
+        padding-block: 54px 50px;
+      }
+
+      .hero-copy h1 {
+        max-width: 720px;
+        font-size: 4.35rem;
+      }
+
+      .launch-card {
+        width: min(100%, 640px);
+      }
+
+      .badge-path {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .leaderboard-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .hero-copy h1 {
+        font-size: 3.45rem;
+      }
+
+      .badge-steps {
+        grid-template-columns: 1fr;
+      }
+
+      .badge-step {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 3px 16px;
+        align-items: center;
+        padding: 16px;
+      }
+
+      .badge-step::before {
+        grid-column: 1 / -1;
+        margin-bottom: 10px;
+      }
+
+      .badge-step strong,
+      .badge-step small {
+        grid-column: 2;
+        margin: 0;
+      }
+
+      .badge-step small {
+        grid-row: 1;
+        align-self: end;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page-width {
+        width: min(calc(100% - 24px), 1200px);
+      }
+
+      .topline {
+        min-height: 66px;
+      }
+
+      .beta-status {
+        padding-inline: 9px;
+        font-size: 0.7rem;
+      }
+
+      .hero {
+        padding-block: 42px 42px;
+      }
+
+      .hero-copy h1 {
+        font-size: 3.15rem;
+        line-height: 0.98;
+      }
+
+      .hero-copy > p {
+        margin-top: 18px;
+        font-size: 1.02rem;
+      }
+
+      .hero-meta {
+        gap: 8px 0;
+        margin-top: 22px;
+      }
+
+      .hero-meta span {
+        padding-inline: 10px;
+      }
+
+      .launch-card {
+        padding: 22px;
+        border-radius: 24px;
+      }
+
+      .launch-card h2 {
+        font-size: 2.75rem;
+      }
+
+      .launch-card .identity-form {
+        grid-template-columns: 1fr;
+      }
+
+      .badge-path {
+        padding-block: 26px 34px;
+      }
+
+      .content-grid {
+        gap: 30px;
+        padding-block: 40px 48px;
+      }
+
+      .prediction-card,
+      .leaderboard-panel,
+      .create-panel {
+        padding: 18px;
+      }
+
+      .resolution-controls {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .resolve-actions {
+        width: 100%;
+      }
+
+      .resolve-button {
+        flex: 1;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .brand-mark {
+        width: 28px;
+        height: 28px;
+      }
+
+      .beta-status {
+        max-width: 132px;
+        text-align: center;
+      }
+
+      .hero-copy h1 {
+        font-size: 2.7rem;
+      }
+
+      .hero {
+        gap: 24px;
+        padding-block: 32px 34px;
+      }
+
+      .hero-copy > p {
+        margin-top: 14px;
+        line-height: 1.5;
+      }
+
+      .hero-meta {
+        margin-top: 16px;
+      }
+
+      .launch-card {
+        padding: 18px;
+      }
+
+      .launch-card h2 {
+        margin-top: 12px;
+        font-size: 2.35rem;
+      }
+
+      .launch-card > p {
+        margin-top: 10px;
+        line-height: 1.45;
+      }
+
+      .launch-card .identity-form {
+        margin-top: 16px;
+      }
+
+      .launch-card .identity-form input,
+      .launch-card .secondary-button {
+        min-height: 46px;
+      }
+
+      .launch-card .primary-button {
+        min-height: 48px;
+        margin-top: 10px;
+      }
+
+      .hero-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .hero-meta span {
+        padding: 0;
+        border: 0;
+      }
+
+      .vote-grid {
+        gap: 8px;
+      }
+
+      .vote-button {
+        padding-inline: 11px;
+        font-size: 0.86rem;
+      }
+
+      .resolve-actions {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
   <a class="skip-link" href="#predictions">Skip to predictions</a>
   <header class="site-header">
+    <div class="page-width topline">
+      <div class="brand-lockup" aria-label="Aura">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>Aura</span>
+      </div>
+      <span class="beta-status">Friends beta · No login</span>
+    </div>
     <div class="page-width hero">
       <div class="hero-copy">
-        <h1>Aura</h1>
-        <p>Call the little everyday yes-or-no bets, pick a side, and keep score with friends.</p>
+        <h1>Predict with friends. Earn aura.</h1>
+        <p>Make tiny everyday calls, earn points, and unlock badges as your Aura grows.</p>
         <div class="hero-meta" aria-label="Aura overview">
           <span><strong id="hero-open-count">0</strong> open predictions</span>
-          <span>Correct call +10 · wrong call −5</span>
+          <span>Correct call +10</span>
+          <span>Wrong call −5</span>
         </div>
       </div>
-      <div class="hero-controls">
+      <aside class="launch-card" aria-label="Join Aura and Solana preview">
+        <span class="launch-status">Solana preview</span>
+        <h2>Coming to Solana</h2>
+        <p>Not live yet. Join the browser beta while we build Aura on-chain.</p>
         <form id="identity-form" class="identity-form" novalidate>
-          <label for="identity-input">Who are you?</label>
+          <label for="identity-input">Your name</label>
           <input id="identity-input" name="identity" type="text" maxlength="24" autocomplete="nickname" placeholder="Enter your name" aria-describedby="identity-error" aria-invalid="false">
-          <button class="secondary-button" type="submit">Save name</button>
+          <button class="secondary-button" type="submit">Join Aura</button>
           <p id="identity-error" class="field-error" aria-live="polite"></p>
         </form>
-        <button id="new-prediction-button" class="primary-button" type="button" data-action="new" aria-expanded="false" aria-controls="prediction-form">New prediction</button>
-      </div>
+        <button id="new-prediction-button" class="primary-button" type="button" data-action="new" aria-expanded="false" aria-controls="prediction-form">Make a prediction</button>
+      </aside>
     </div>
+    <section class="page-width badge-path" aria-labelledby="badge-path-heading">
+      <div class="badge-path-copy">
+        <h2 id="badge-path-heading">Pick a side. Build your Aura.</h2>
+        <p>Every resolved call moves your total. Unlock badges when your Aura hits each tier.</p>
+      </div>
+      <ol class="badge-steps">
+        <li class="badge-step badge-step-rookie">
+          <span class="tier-name">Rookie</span>
+          <strong>Up to 50</strong>
+          <small>Aura points</small>
+        </li>
+        <li class="badge-step badge-step-chad">
+          <span class="tier-name">Chad</span>
+          <strong>51–150</strong>
+          <small>Aura points</small>
+        </li>
+        <li class="badge-step badge-step-gigachad">
+          <span class="tier-name">Gigachad</span>
+          <strong>151+</strong>
+          <small>Aura points</small>
+        </li>
+      </ol>
+    </section>
   </header>
   <main class="page-width content-grid">
     <section id="predictions" aria-labelledby="predictions-heading">
@@ -755,7 +1583,7 @@
       <h2 id="leaderboard-heading">Aura board</h2>
       <p class="leaderboard-subtitle">Every player, sorted by current score.</p>
       <ol id="leaderboard-list" class="leaderboard-list"></ol>
-      <p id="leaderboard-empty" class="empty-leaderboard" hidden>No players yet. Save your name or cast a vote.</p>
+      <p id="leaderboard-empty" class="empty-leaderboard" hidden>No players yet. Join Aura or cast a vote.</p>
       <p class="scoring-note">Rookie up to 50 · Chad 51–150 · Gigachad 151+</p>
     </aside>
   </main>
@@ -1007,7 +1835,7 @@
           openCount.textContent = `${openPredictions.length} open`;
           heroOpenCount.textContent = openPredictions.length;
           if (openPredictions.length === 0) {
-            predictionsList.innerHTML = '<section class="empty-state"><h3>Nothing open. Nice work.</h3><p>Every call is settled. Use New prediction when the group starts betting again.</p></section>';
+            predictionsList.innerHTML = '<section class="empty-state"><h3>Nothing open. Nice work.</h3><p>Every call is settled. Use Make a prediction when the group starts betting again.</p></section>';
             return;
           }
           const currentKey = AuraCore.normalizeName(state.identity);
@@ -1042,7 +1870,7 @@
 
         function requireIdentity() {
           if (state.identity) return true;
-          setFieldError(identityInput, identityError, 'Save your name before voting.');
+          setFieldError(identityInput, identityError, 'Join Aura before voting.');
           identityInput.focus();
           showToast('Tell Aura who you are first.', 'error');
           return false;
@@ -1051,7 +1879,7 @@
         function setCreatePanel(open) {
           predictionForm.hidden = !open;
           newPredictionButton.setAttribute('aria-expanded', String(open));
-          newPredictionButton.textContent = open ? 'Close panel' : 'New prediction';
+          newPredictionButton.textContent = open ? 'Close prediction form' : 'Make a prediction';
           if (open) predictionInput.focus();
         }
 
@@ -1146,7 +1974,7 @@
     }
   </script>
   <footer class="page-width site-footer">
-    <p>Group chat energy. <strong>Solana coming soon.</strong></p>
+    <p>Group chat energy, turned into Aura. <strong>Coming to Solana.</strong></p>
     <iframe src="https://ai-frnds-tracker.vercel.app" style="border:none;width:200px;height:40px" loading="lazy"></iframe>
   </footer>
 </body>
