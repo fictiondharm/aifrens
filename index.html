@@ -1,0 +1,1153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Aura is a friendly scoreboard for everyday yes-or-no predictions among friends.">
+  <title>Aura — friendly prediction scoreboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --canvas: #f1f3f7;
+      --surface: #fbfcff;
+      --surface-strong: #ffffff;
+      --ink: #171820;
+      --muted: #5e6472;
+      --line: #d7dbe4;
+      --line-strong: #b8becb;
+      --violet: #5f3bd6;
+      --violet-dark: #4b2cb5;
+      --violet-soft: #eee9ff;
+      --yes: #14734a;
+      --yes-soft: #e1f4e9;
+      --no: #aa3345;
+      --no-soft: #fbe8eb;
+      --danger: #a52a3a;
+      --shadow: 0 12px 32px rgba(39, 43, 58, 0.07);
+      --radius: 16px;
+      --radius-small: 10px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 320px;
+      background: var(--canvas);
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100dvh;
+      margin: 0;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      text-rendering: optimizeLegibility;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button,
+    input,
+    textarea {
+      border-radius: var(--radius-small);
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    a:focus-visible {
+      outline: 3px solid rgba(95, 59, 214, 0.32);
+      outline-offset: 2px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      padding: 10px 14px;
+      color: var(--surface-strong);
+      background: var(--ink);
+      border-radius: 8px;
+      transform: translateY(-150%);
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+    }
+
+    .page-width {
+      width: min(calc(100% - 40px), 1180px);
+      margin-inline: auto;
+    }
+
+    .site-header {
+      border-bottom: 1px solid var(--line);
+      background: rgba(251, 252, 255, 0.72);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+      gap: 40px;
+      align-items: end;
+      padding-block: 28px 24px;
+    }
+
+    .hero-copy h1 {
+      margin: 0;
+      font-size: clamp(2.25rem, 5vw, 3.4rem);
+      line-height: 1;
+      letter-spacing: -0.055em;
+    }
+
+    .hero-copy > p {
+      max-width: 590px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 20px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 650;
+    }
+
+    .hero-meta strong {
+      color: var(--ink);
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hero-controls {
+      display: grid;
+      gap: 10px;
+    }
+
+    .identity-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 7px 9px;
+      align-items: end;
+    }
+
+    .identity-form label {
+      grid-column: 1 / -1;
+      font-size: 0.86rem;
+      font-weight: 750;
+    }
+
+    .identity-form input,
+    .create-panel textarea {
+      width: 100%;
+      color: var(--ink);
+      background: var(--surface-strong);
+      border: 1px solid var(--line-strong);
+    }
+
+    .identity-form input {
+      min-width: 0;
+      min-height: 46px;
+      padding: 10px 12px;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #737a88;
+      opacity: 1;
+    }
+
+    input[aria-invalid="true"],
+    textarea[aria-invalid="true"] {
+      border-color: var(--danger);
+    }
+
+    .primary-button,
+    .secondary-button,
+    .text-button,
+    .vote-button,
+    .resolve-button {
+      min-height: 44px;
+      border: 1px solid transparent;
+      font-weight: 750;
+      transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .primary-button {
+      padding: 10px 16px;
+      color: var(--surface-strong);
+      background: var(--violet);
+      border-color: var(--violet);
+    }
+
+    .primary-button:hover {
+      background: var(--violet-dark);
+      border-color: var(--violet-dark);
+    }
+
+    .secondary-button {
+      padding: 10px 14px;
+      color: var(--ink);
+      background: var(--surface-strong);
+      border-color: var(--line-strong);
+    }
+
+    .secondary-button:hover {
+      border-color: var(--ink);
+    }
+
+    #new-prediction-button {
+      width: 100%;
+    }
+
+    .field-error {
+      grid-column: 1 / -1;
+      min-height: 0;
+      margin: 0;
+      color: var(--danger);
+      font-size: 0.82rem;
+      font-weight: 650;
+    }
+
+    .field-error:empty {
+      display: none;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 24px;
+      align-items: start;
+      padding-block: 30px 48px;
+    }
+
+    .section-heading {
+      display: flex;
+      gap: 18px;
+      align-items: baseline;
+      justify-content: space-between;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .section-heading h2,
+    .leaderboard-panel h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+    }
+
+    .open-count {
+      flex: none;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .create-panel {
+      display: grid;
+      gap: 9px;
+      margin-top: 16px;
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .create-panel label {
+      font-size: 0.9rem;
+      font-weight: 750;
+    }
+
+    .create-panel textarea {
+      min-height: 96px;
+      padding: 12px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .form-footer {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .character-count {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .prediction-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .prediction-card {
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .creator-name {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      color: var(--ink);
+      background: #e9ecf2;
+      border-radius: 8px;
+      font-weight: 750;
+    }
+
+    .prediction-card h3 {
+      max-width: 720px;
+      margin: 16px 0 18px;
+      font-size: clamp(1.12rem, 2.4vw, 1.4rem);
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+    }
+
+    .vote-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .vote-button {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 0;
+      padding: 11px 13px;
+      background: var(--surface-strong);
+      border-color: var(--line-strong);
+    }
+
+    .vote-button strong {
+      min-width: 1.6em;
+      font-size: 1.15rem;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .vote-button small {
+      display: block;
+      margin-top: -3px;
+      font-size: 0.67rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .vote-button.yes {
+      color: var(--yes);
+    }
+
+    .vote-button.no {
+      color: var(--no);
+    }
+
+    .vote-button.yes:hover,
+    .vote-button.yes.is-selected {
+      background: var(--yes-soft);
+      border-color: var(--yes);
+    }
+
+    .vote-button.no:hover,
+    .vote-button.no.is-selected {
+      background: var(--no-soft);
+      border-color: var(--no);
+    }
+
+    .vote-button.is-selected {
+      box-shadow: inset 0 0 0 1px currentColor;
+    }
+
+    .resolution-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 15px;
+      border-top: 1px solid var(--line);
+    }
+
+    .resolution-controls p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 750;
+    }
+
+    .resolve-actions {
+      display: flex;
+      gap: 7px;
+    }
+
+    .resolve-button {
+      min-height: 38px;
+      padding: 7px 10px;
+      color: var(--ink);
+      background: transparent;
+      border-color: var(--line-strong);
+      font-size: 0.78rem;
+    }
+
+    .resolve-button[data-outcome="yes"]:hover {
+      color: var(--yes);
+      background: var(--yes-soft);
+      border-color: var(--yes);
+    }
+
+    .resolve-button[data-outcome="no"]:hover {
+      color: var(--no);
+      background: var(--no-soft);
+      border-color: var(--no);
+    }
+
+    .empty-state {
+      padding: 42px 24px;
+      text-align: center;
+      background: var(--surface);
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+    }
+
+    .empty-state h3 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .empty-state p {
+      max-width: 430px;
+      margin: 8px auto 0;
+      color: var(--muted);
+    }
+
+    .leaderboard-panel {
+      position: sticky;
+      top: 18px;
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .leaderboard-subtitle {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .leaderboard-list {
+      display: grid;
+      gap: 2px;
+      margin: 18px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .rank {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .player-info {
+      min-width: 0;
+    }
+
+    .player-info strong {
+      display: block;
+      overflow: hidden;
+      font-size: 0.9rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 0.67rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .badge.gigachad {
+      color: var(--violet-dark);
+    }
+
+    .score {
+      font-size: 1.05rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .score.negative {
+      color: var(--no);
+    }
+
+    .empty-leaderboard {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .scoring-note {
+      margin: 18px 0 0;
+      padding-top: 15px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: 0.78rem;
+    }
+
+    .site-footer {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px 24px;
+      align-items: center;
+      justify-content: space-between;
+      padding-block: 0 28px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .site-footer p {
+      margin: 0;
+    }
+
+    .site-footer strong {
+      color: var(--ink);
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 5;
+      width: min(360px, calc(100% - 36px));
+      padding: 13px 15px;
+      color: var(--surface-strong);
+      background: var(--ink);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 10px;
+      box-shadow: 0 16px 38px rgba(23, 24, 32, 0.22);
+      font-size: 0.9rem;
+      font-weight: 700;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.error {
+      background: #4b1d27;
+    }
+
+    @media (hover: hover) {
+      .primary-button:hover,
+      .secondary-button:hover {
+        transform: translateY(-1px);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 22px;
+        align-items: start;
+      }
+
+      .hero-controls {
+        max-width: 560px;
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .leaderboard-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page-width {
+        width: min(calc(100% - 24px), 1180px);
+      }
+
+      .hero {
+        padding-block: 22px 20px;
+      }
+
+      .hero-copy > p {
+        font-size: 0.98rem;
+      }
+
+      .identity-form {
+        grid-template-columns: 1fr;
+      }
+
+      .identity-form .secondary-button {
+        width: 100%;
+      }
+
+      .content-grid {
+        gap: 30px;
+        padding-block: 24px 36px;
+      }
+
+      .prediction-card,
+      .leaderboard-panel,
+      .create-panel {
+        padding: 16px;
+      }
+
+      .resolution-controls {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .resolve-actions {
+        width: 100%;
+      }
+
+      .resolve-button {
+        flex: 1;
+      }
+
+      .site-footer {
+        align-items: flex-start;
+        flex-direction: column;
+        padding-bottom: 22px;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .vote-grid {
+        gap: 7px;
+      }
+
+      .vote-button {
+        padding-inline: 10px;
+        font-size: 0.9rem;
+      }
+
+      .resolve-actions {
+        flex-direction: column;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#predictions">Skip to predictions</a>
+  <header class="site-header">
+    <div class="page-width hero">
+      <div class="hero-copy">
+        <h1>Aura</h1>
+        <p>Call the little everyday yes-or-no bets, pick a side, and keep score with friends.</p>
+        <div class="hero-meta" aria-label="Aura overview">
+          <span><strong id="hero-open-count">0</strong> open predictions</span>
+          <span>Correct call +10 · wrong call −5</span>
+        </div>
+      </div>
+      <div class="hero-controls">
+        <form id="identity-form" class="identity-form" novalidate>
+          <label for="identity-input">Who are you?</label>
+          <input id="identity-input" name="identity" type="text" maxlength="24" autocomplete="nickname" placeholder="Enter your name" aria-describedby="identity-error" aria-invalid="false">
+          <button class="secondary-button" type="submit">Save name</button>
+          <p id="identity-error" class="field-error" aria-live="polite"></p>
+        </form>
+        <button id="new-prediction-button" class="primary-button" type="button" data-action="new" aria-expanded="false" aria-controls="prediction-form">New prediction</button>
+      </div>
+    </div>
+  </header>
+  <main class="page-width content-grid">
+    <section id="predictions" aria-labelledby="predictions-heading">
+      <div class="section-heading">
+        <h2 id="predictions-heading">Open predictions</h2>
+        <span id="open-count" class="open-count">0 open</span>
+      </div>
+      <form id="prediction-form" class="create-panel" novalidate hidden>
+        <label for="prediction-input">What’s the prediction?</label>
+        <textarea id="prediction-input" name="prediction" maxlength="120" required placeholder="Example: We’ll leave class five minutes early today." aria-describedby="prediction-error character-count" aria-invalid="false"></textarea>
+        <p id="prediction-error" class="field-error" aria-live="polite"></p>
+        <div class="form-footer">
+          <span id="character-count" class="character-count">0 / 120</span>
+          <button class="primary-button" type="submit">Post prediction</button>
+        </div>
+      </form>
+      <div id="predictions-list" class="prediction-list"></div>
+    </section>
+    <aside class="leaderboard-panel" aria-labelledby="leaderboard-heading">
+      <h2 id="leaderboard-heading">Aura board</h2>
+      <p class="leaderboard-subtitle">Every player, sorted by current score.</p>
+      <ol id="leaderboard-list" class="leaderboard-list"></ol>
+      <p id="leaderboard-empty" class="empty-leaderboard" hidden>No players yet. Save your name or cast a vote.</p>
+      <p class="scoring-note">Rookie up to 50 · Chad 51–150 · Gigachad 151+</p>
+    </aside>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+  <script>
+    const AuraCore = (() => {
+      const compactName = (value) => typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, 24) : '';
+
+      const normalizeName = (value) => compactName(value).toLowerCase();
+
+      const badgeFor = (score) => {
+        const value = Number(score);
+        if (!Number.isFinite(value) || value <= 50) return 'rookie';
+        if (value <= 150) return 'chad';
+        return 'gigachad';
+      };
+
+      const tally = (prediction) => {
+        const counts = { yes: 0, no: 0 };
+        if (!prediction || typeof prediction.votes !== 'object' || prediction.votes === null) return counts;
+        Object.values(prediction.votes).forEach((vote) => {
+          if (vote && (vote.choice === 'yes' || vote.choice === 'no')) counts[vote.choice] += 1;
+        });
+        return counts;
+      };
+
+      const castVote = (prediction, name, choice) => {
+        const voter = normalizeName(name);
+        if (!prediction || !voter || (choice !== 'yes' && choice !== 'no')) return prediction;
+        const existing = prediction.votes && prediction.votes[voter];
+        const displayName = compactName(existing && existing.name ? existing.name : name) || voter;
+        return {
+          ...prediction,
+          votes: {
+            ...prediction.votes,
+            [voter]: { name: displayName, choice }
+          }
+        };
+      };
+
+      const applyResolution = (state, predictionId, outcome) => {
+        if (!state || !Array.isArray(state.predictions) || (outcome !== 'yes' && outcome !== 'no')) return state;
+        const prediction = state.predictions.find((item) => item && item.id === predictionId);
+        if (!prediction || prediction.status !== 'open') return state;
+        const players = { ...state.players };
+        Object.entries(prediction.votes || {}).forEach(([rawKey, vote]) => {
+          const key = normalizeName(rawKey || vote.name);
+          if (!key || !vote || (vote.choice !== 'yes' && vote.choice !== 'no')) return;
+          const existing = players[key];
+          const previousScore = existing && Number.isSafeInteger(existing.score) ? existing.score : 0;
+          players[key] = {
+            name: compactName(vote.name) || (existing && existing.name) || key,
+            score: previousScore + (vote.choice === outcome ? 10 : -5)
+          };
+        });
+        return {
+          ...state,
+          players,
+          predictions: state.predictions.map((item) => item.id === predictionId ? { ...item, status: 'resolved', outcome } : item)
+        };
+      };
+
+      return Object.freeze({ normalizeName, badgeFor, tally, castVote, applyResolution });
+    })();
+
+    globalThis.AuraCore = AuraCore;
+
+    if (typeof document !== 'undefined') {
+      (() => {
+        const storageKey = 'aura-state-v1';
+        const identityForm = document.getElementById('identity-form');
+        const identityInput = document.getElementById('identity-input');
+        const identityError = document.getElementById('identity-error');
+        const newPredictionButton = document.getElementById('new-prediction-button');
+        const predictionForm = document.getElementById('prediction-form');
+        const predictionInput = document.getElementById('prediction-input');
+        const predictionError = document.getElementById('prediction-error');
+        const characterCount = document.getElementById('character-count');
+        const predictionsList = document.getElementById('predictions-list');
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const leaderboardEmpty = document.getElementById('leaderboard-empty');
+        const openCount = document.getElementById('open-count');
+        const heroOpenCount = document.getElementById('hero-open-count');
+        const toast = document.getElementById('toast');
+        let toastTimer;
+        let recoveredStorage = false;
+        let state = loadState();
+
+        function compactName(value) {
+          return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, 24) : '';
+        }
+
+        function compactText(value) {
+          return typeof value === 'string' ? value.trim().replace(/\s+/g, ' ').slice(0, 120) : '';
+        }
+
+        function escapeHtml(value) {
+          const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+          return String(value).replace(/[&<>"']/g, (character) => entities[character]);
+        }
+
+        function freshState() {
+          const predictions = [
+            {
+              id: 'morning-five',
+              text: 'The person who says “just five minutes” reaches the building before 8:45 AM.',
+              creator: 'Maya',
+              status: 'open',
+              outcome: null,
+              votes: {
+                ari: { name: 'Ari', choice: 'yes' },
+                june: { name: 'June', choice: 'yes' },
+                theo: { name: 'Theo', choice: 'no' }
+              }
+            },
+            {
+              id: 'reusable-cup',
+              text: 'Someone forgets the reusable cup they promised to bring.',
+              creator: 'Jordan',
+              status: 'open',
+              outcome: null,
+              votes: {
+                maya: { name: 'Maya', choice: 'yes' },
+                sam: { name: 'Sam', choice: 'no' }
+              }
+            },
+            {
+              id: 'quiet-chat',
+              text: 'The group chat stays completely silent for eight minutes before noon.',
+              creator: 'Kai',
+              status: 'open',
+              outcome: null,
+              votes: {
+                milo: { name: 'Milo', choice: 'no' }
+              }
+            }
+          ];
+          const names = ['Maya', 'Ari', 'June', 'Theo', 'Jordan', 'Sam', 'Kai', 'Milo'];
+          const players = {};
+          names.forEach((name) => {
+            players[AuraCore.normalizeName(name)] = { name, score: 0 };
+          });
+          return { version: 1, seeded: true, identity: '', players, predictions };
+        }
+
+        function isRecord(value) {
+          return value !== null && typeof value === 'object' && !Array.isArray(value);
+        }
+
+        function normalizeStoredState(value) {
+          if (!isRecord(value) || value.version !== 1 || typeof value.seeded !== 'boolean' || !isRecord(value.players) || !Array.isArray(value.predictions)) return null;
+          if (typeof value.identity !== 'string') return null;
+          const players = {};
+          const addPlayer = (name, score) => {
+            const cleanName = compactName(name);
+            const key = AuraCore.normalizeName(cleanName);
+            if (!key) return;
+            if (!players[key]) players[key] = { name: cleanName, score: Number.isSafeInteger(score) ? score : 0 };
+          };
+          Object.values(value.players).forEach((player) => {
+            if (isRecord(player)) addPlayer(player.name, player.score);
+          });
+          if (compactName(value.identity)) addPlayer(value.identity, 0);
+          const predictions = [];
+          const ids = new Set();
+          for (let index = 0; index < value.predictions.length; index += 1) {
+            const prediction = value.predictions[index];
+            if (!isRecord(prediction) || typeof prediction.id !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(prediction.id) || ids.has(prediction.id)) return null;
+            const text = compactText(prediction.text);
+            const creator = compactName(prediction.creator);
+            if (!text || !creator || !isRecord(prediction.votes)) return null;
+            if (prediction.status !== 'open' && prediction.status !== 'resolved') return null;
+            if (prediction.status === 'open' && prediction.outcome !== null) return null;
+            if (prediction.status === 'resolved' && prediction.outcome !== 'yes' && prediction.outcome !== 'no') return null;
+            addPlayer(creator, 0);
+            const votes = {};
+            for (const [rawKey, vote] of Object.entries(prediction.votes)) {
+              if (!isRecord(vote) || (vote.choice !== 'yes' && vote.choice !== 'no')) return null;
+              const key = AuraCore.normalizeName(rawKey || vote.name);
+              const name = compactName(vote.name) || (players[key] && players[key].name) || key;
+              if (!key) return null;
+              votes[key] = { name, choice: vote.choice };
+              addPlayer(name, 0);
+            }
+            ids.add(prediction.id);
+            predictions.push({ id: prediction.id, text, creator, status: prediction.status, outcome: prediction.outcome, votes });
+          }
+          return { version: 1, seeded: value.seeded, identity: compactName(value.identity), players, predictions };
+        }
+
+        function loadState() {
+          try {
+            const stored = localStorage.getItem(storageKey);
+            if (!stored) return freshState();
+            const normalized = normalizeStoredState(JSON.parse(stored));
+            if (normalized) return normalized;
+          } catch (error) {
+            recoveredStorage = true;
+          }
+          return freshState();
+        }
+
+        function saveState() {
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(state));
+            return true;
+          } catch (error) {
+            return false;
+          }
+        }
+
+        function ensurePlayer(name) {
+          const cleanName = compactName(name);
+          const key = AuraCore.normalizeName(cleanName);
+          if (!key) return;
+          if (!state.players[key]) state.players[key] = { name: cleanName, score: 0 };
+        }
+
+        function makeId() {
+          if (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function') return globalThis.crypto.randomUUID();
+          return `prediction-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+        }
+
+        function showToast(message, kind = 'success') {
+          clearTimeout(toastTimer);
+          toast.textContent = message;
+          toast.className = `toast ${kind}`;
+          toast.hidden = false;
+          requestAnimationFrame(() => toast.classList.add('is-visible'));
+          toastTimer = setTimeout(() => {
+            toast.classList.remove('is-visible');
+            toastTimer = setTimeout(() => {
+              toast.hidden = true;
+            }, 190);
+          }, 3200);
+        }
+
+        function setFieldError(input, errorElement, message) {
+          errorElement.textContent = message;
+          input.setAttribute('aria-invalid', message ? 'true' : 'false');
+        }
+
+        function isCurrentCreator(prediction) {
+          return Boolean(state.identity) && AuraCore.normalizeName(state.identity) === AuraCore.normalizeName(prediction.creator);
+        }
+
+        function renderPredictions() {
+          const openPredictions = state.predictions.filter((prediction) => prediction.status === 'open');
+          openCount.textContent = `${openPredictions.length} open`;
+          heroOpenCount.textContent = openPredictions.length;
+          if (openPredictions.length === 0) {
+            predictionsList.innerHTML = '<section class="empty-state"><h3>Nothing open. Nice work.</h3><p>Every call is settled. Use New prediction when the group starts betting again.</p></section>';
+            return;
+          }
+          const currentKey = AuraCore.normalizeName(state.identity);
+          predictionsList.innerHTML = openPredictions.map((prediction) => {
+            const counts = AuraCore.tally(prediction);
+            const selected = prediction.votes[currentKey] ? prediction.votes[currentKey].choice : '';
+            const yesSelected = selected === 'yes' ? ' is-selected' : '';
+            const noSelected = selected === 'no' ? ' is-selected' : '';
+            const yesPick = selected === 'yes' ? '<small>Your pick</small>' : '';
+            const noPick = selected === 'no' ? '<small>Your pick</small>' : '';
+            const creatorControls = isCurrentCreator(prediction) ? `<div class="resolution-controls"><p>Did this happen?</p><div class="resolve-actions"><button class="resolve-button" type="button" data-action="resolve" data-outcome="yes" data-id="${escapeHtml(prediction.id)}">Yes happened</button><button class="resolve-button" type="button" data-action="resolve" data-outcome="no" data-id="${escapeHtml(prediction.id)}">No happened</button></div></div>` : '';
+            return `<article class="prediction-card"><div class="card-meta"><span>Asked by</span><span class="creator-name">${escapeHtml(prediction.creator)}</span></div><h3>${escapeHtml(prediction.text)}</h3><div class="vote-grid"><button class="vote-button yes${yesSelected}" type="button" data-action="vote" data-choice="yes" data-id="${escapeHtml(prediction.id)}" aria-pressed="${selected === 'yes'}" aria-label="Vote yes, ${counts.yes} votes${selected === 'yes' ? ', your current vote' : ''}"><span>Yes</span><span><strong>${counts.yes}</strong>${yesPick}</span></button><button class="vote-button no${noSelected}" type="button" data-action="vote" data-choice="no" data-id="${escapeHtml(prediction.id)}" aria-pressed="${selected === 'no'}" aria-label="Vote no, ${counts.no} votes${selected === 'no' ? ', your current vote' : ''}"><span>No</span><span><strong>${counts.no}</strong>${noPick}</span></button></div>${creatorControls}</article>`;
+          }).join('');
+        }
+
+        function renderLeaderboard() {
+          const players = Object.entries(state.players)
+            .map(([key, player]) => ({ key, name: compactName(player.name) || key, score: Number.isSafeInteger(player.score) ? player.score : 0 }))
+            .sort((left, right) => right.score - left.score || left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }));
+          leaderboardEmpty.hidden = players.length > 0;
+          leaderboardList.innerHTML = players.map((player, index) => {
+            const badge = AuraCore.badgeFor(player.score);
+            const scoreClass = player.score < 0 ? 'score negative' : 'score';
+            return `<li class="leaderboard-row"><span class="rank" aria-label="Rank ${index + 1}">${index + 1}</span><span class="player-info"><strong>${escapeHtml(player.name)}</strong><span class="badge ${badge}">${badge}</span></span><span class="${scoreClass}" aria-label="${player.score} aura points">${player.score}</span></li>`;
+          }).join('');
+        }
+
+        function render() {
+          renderPredictions();
+          renderLeaderboard();
+        }
+
+        function requireIdentity() {
+          if (state.identity) return true;
+          setFieldError(identityInput, identityError, 'Save your name before voting.');
+          identityInput.focus();
+          showToast('Tell Aura who you are first.', 'error');
+          return false;
+        }
+
+        function setCreatePanel(open) {
+          predictionForm.hidden = !open;
+          newPredictionButton.setAttribute('aria-expanded', String(open));
+          newPredictionButton.textContent = open ? 'Close panel' : 'New prediction';
+          if (open) predictionInput.focus();
+        }
+
+        document.addEventListener('click', (event) => {
+          const button = event.target.closest('button[data-action]');
+          if (!button) return;
+          const action = button.dataset.action;
+          if (action === 'new') {
+            setCreatePanel(predictionForm.hidden);
+            return;
+          }
+          if (action === 'vote') {
+            if (!requireIdentity()) return;
+            const prediction = state.predictions.find((item) => item.id === button.dataset.id && item.status === 'open');
+            const choice = button.dataset.choice;
+            if (!prediction || (choice !== 'yes' && choice !== 'no')) return;
+            const key = AuraCore.normalizeName(state.identity);
+            if (prediction.votes[key] && prediction.votes[key].choice === choice) {
+              showToast(`Your vote is already ${choice === 'yes' ? 'Yes' : 'No'}.`);
+              return;
+            }
+            state.predictions = state.predictions.map((item) => item.id === prediction.id ? AuraCore.castVote(item, state.identity, choice) : item);
+            ensurePlayer(state.identity);
+            const saved = saveState();
+            render();
+            showToast(saved ? `Vote counted: ${choice === 'yes' ? 'Yes' : 'No'}.` : 'Vote counted, but browser storage is unavailable.', saved ? 'success' : 'error');
+            return;
+          }
+          if (action === 'resolve') {
+            if (!requireIdentity()) return;
+            const prediction = state.predictions.find((item) => item.id === button.dataset.id && item.status === 'open');
+            const outcome = button.dataset.outcome;
+            if (!prediction || !isCurrentCreator(prediction) || (outcome !== 'yes' && outcome !== 'no')) return;
+            state = AuraCore.applyResolution(state, prediction.id, outcome);
+            const saved = saveState();
+            render();
+            showToast(saved ? `${outcome === 'yes' ? 'Yes happened' : 'No happened'}. Correct voters earned 10; wrong voters lost 5.` : 'Outcome recorded, but browser storage is unavailable.', saved ? 'success' : 'error');
+          }
+        });
+
+        document.addEventListener('submit', (event) => {
+          if (event.target === identityForm) {
+            event.preventDefault();
+            const name = compactName(identityInput.value);
+            if (!name) {
+              setFieldError(identityInput, identityError, 'Enter a name of 24 characters or fewer.');
+              identityInput.focus();
+              return;
+            }
+            setFieldError(identityInput, identityError, '');
+            state.identity = name;
+            ensurePlayer(name);
+            const saved = saveState();
+            render();
+            showToast(saved ? `You’re in as ${name}.` : `You’re in as ${name} for this visit, but browser storage is unavailable.`, saved ? 'success' : 'error');
+            return;
+          }
+          if (event.target === predictionForm) {
+            event.preventDefault();
+            if (!requireIdentity()) return;
+            const text = compactText(predictionInput.value);
+            if (!text) {
+              setFieldError(predictionInput, predictionError, 'Write a prediction of 120 characters or fewer.');
+              predictionInput.focus();
+              return;
+            }
+            setFieldError(predictionInput, predictionError, '');
+            ensurePlayer(state.identity);
+            state.predictions.unshift({ id: makeId(), text, creator: state.identity, status: 'open', outcome: null, votes: {} });
+            const saved = saveState();
+            predictionInput.value = '';
+            characterCount.textContent = '0 / 120';
+            setCreatePanel(false);
+            render();
+            showToast(saved ? 'Prediction posted. Make the first call.' : 'Prediction posted, but browser storage is unavailable.', saved ? 'success' : 'error');
+          }
+        });
+
+        document.addEventListener('input', (event) => {
+          if (event.target === identityInput && identityInput.value.trim()) setFieldError(identityInput, identityError, '');
+          if (event.target === predictionInput) {
+            characterCount.textContent = `${predictionInput.value.length} / 120`;
+            if (predictionInput.value.trim()) setFieldError(predictionInput, predictionError, '');
+          }
+        });
+
+        identityInput.value = state.identity;
+        render();
+        saveState();
+        if (recoveredStorage) showToast('Saved Aura data was unreadable, so a fresh board was started.', 'error');
+      })();
+    }
+  </script>
+  <footer class="page-width site-footer">
+    <p>Group chat energy. <strong>Solana coming soon.</strong></p>
+    <iframe src="https://ai-frnds-tracker.vercel.app" style="border:none;width:200px;height:40px" loading="lazy"></iframe>
+  </footer>
+</body>
+</html>
